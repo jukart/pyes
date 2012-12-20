@@ -137,5 +137,13 @@ class Connection(object):
             else:
                 heapq.heappush(self._inactive_servers, (time() + self._retry_time, server))
                 logger.warning("Removed server %s from active pool", server)
+            if not self._active_servers:
+                # No servers left.
+                # Reactivate the server on top of the heap.
+                # This prevents a lock in case all servers are restarted
+                # especially in case there is only one server configured.
+                ts, server = heapq.heappop(self._inactive_servers)
+                self._active_servers.append(server)
+                logger.info("Restored server %s into active pool", server)
 
 connect = Connection
